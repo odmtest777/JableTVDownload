@@ -1,4 +1,4 @@
-# author: hcjohn463
+# author: fox
 #!/usr/bin/env python
 # coding: utf-8
 
@@ -8,58 +8,73 @@
 import requests
 import os
 import re
-from bs4 import BeautifulSoup
 import urllib.request
 import m3u8
-from Crypto.Cipher import AES
+import sys
 from config import headers
 from crawler import prepareCrawl
 from merge import mergeMp4
 from delete import deleteM3u8, deleteMp4
-from cover import downloadCover
+
+def str_cover_list(str):
+    return list(str)
+
+def get_ddCalcu(puData_url):
+    params_dict = {}
+    query_string = puData_url.split("?")[-1]
+    for i in query_string.split("&"):
+        temp = i.split("=")
+        params_dict[temp[0]] = temp[1]
+    puData_list = str_cover_list(params_dict['puData'])
+    p = 0
+    result = []
+    while (2 * p) < len(puData_list):
+        result.append(puData_list[len(puData_list) - p - 1])
+        if p < len(puData_list) - p - 1:
+            result.append(params_dict['puData'][p])
+        if p == 1:
+            result.append('e')
+        if p == 2:
+            result.append(str_cover_list(params_dict['timestamp'])[6])
+        if p == 3:
+            result.append(str_cover_list(params_dict['ProgramID'])[2])
+        if p == 4:
+            result.append(str_cover_list(params_dict['Channel_ID'])[len(str_cover_list(params_dict['Channel_ID'])) - 4])
+        p += 1
+    return ''.join(result)
 
 # In[2]:
 
+# 713573353
+if len(sys.argv) == 1:
+    print('请在启动参数中输入视频id')
+    sys.exit()
 
-# Jable網址
-url = input('輸入jable網址:')
+m3u8ApiUrl = "https://webapi.miguvideo.com/gateway/playurl/v3/play/playurl?contId="
+downloadurl = 'https://mgbs.vod.miguvideo.com/depository_yqv/asset{}media'
+videoCode = sys.argv[1]
 
 # In[3]:
 
 
-# 建立番號資料夾
-urlSplit = url.split('/')
-dirName = urlSplit[-2]
-if not os.path.exists(dirName):
-    os.makedirs(dirName)
-folderPath = os.path.join(os.getcwd(), dirName)
+# 建立資料夾
+if not os.path.exists(videoCode):
+    os.makedirs(videoCode)
+folderPath = os.path.join(os.getcwd(), videoCode)
 
 
 # In[4]:
 
 
 # 得到 m3u8 網址
-# htmlfile = requests.get(url)
-# soup = BeautifulSoup(htmlfile.text, 'lxml')
-# needScript = str(soup.find_all('script')[7])
-# m3u8url = needScript.split('var hlsUrl = ')[1].split(';')[0]
-# m3u8url = m3u8url[1:][:-1]
-
-htmlfile = requests.get(url)
-
-# 下载封面
-downloadCover(htmlfile,folderPath,dirName)
-
-result = re.search("https://.+m3u8", htmlfile.text)
-m3u8url = result[0]
-
-m3u8urlList = m3u8url.split('/')
-m3u8urlList.pop(-1)
-downloadurl = '/'.join(m3u8urlList)
+res = requests.get(m3u8ApiUrl + videoCode, headers=headers)
+puData_url = res.json()['body']['urlInfo']['url']
+ddCalcu = get_ddCalcu(puData_url)
+m3u8url = f"{puData_url}&ddCalcu={ddCalcu}"
 
 
 # 儲存 m3u8 file 至資料夾
-m3u8file = os.path.join(folderPath, dirName + '.m3u8')
+m3u8file = os.path.join(folderPath, videoCode + '.m3u8')
 urllib.request.urlretrieve(m3u8url, m3u8file)
 
 
@@ -68,38 +83,14 @@ urllib.request.urlretrieve(m3u8url, m3u8file)
 
 # 得到 m3u8 file裡的 URI和 IV
 m3u8obj = m3u8.load(m3u8file)
-m3u8uri = ''
-m3u8iv = ''
-
-for key in m3u8obj.keys:
-    if key:
-        m3u8uri = key.uri
-        m3u8iv = key.iv
 
 # 儲存 ts網址 in tsList
+_url  = re.findall("asset(.+?)media", puData_url)[0]
+downloadurl = downloadurl.format(_url)
 tsList = []
 for seg in m3u8obj.segments:
     tsUrl = downloadurl + '/' + seg.uri
     tsList.append(tsUrl)
-
-
-# In[6]:
-
-
-# 有加密
-if m3u8uri:
-    m3u8keyurl = downloadurl + '/' + m3u8uri  # 得到 key 的網址
-
-    # 得到 key的內容
-    response = requests.get(m3u8keyurl, headers=headers, timeout=10)
-    contentKey = response.content
-
-    vt = m3u8iv.replace("0x", "")[:16].encode()  # IV取前16位
-
-    ci = AES.new(contentKey, AES.MODE_CBC, vt)  # 建構解碼器
-else:
-    ci = ''
-
 
 # In[7]:
 
@@ -112,7 +103,7 @@ deleteM3u8(folderPath)
 
 
 # 開始爬蟲並下載mp4片段至資料夾
-prepareCrawl(ci, folderPath, tsList)
+prepareCrawl('', folderPath, tsList)
 
 
 # In[9]:
