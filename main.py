@@ -17,6 +17,7 @@ from crawler import prepareCrawl
 from merge import mergeMp4
 from delete import deleteM3u8, deleteMp4
 from cover import downloadCover
+import cloudscraper
 
 # In[2]:
 
@@ -45,7 +46,8 @@ folderPath = os.path.join(os.getcwd(), dirName)
 # m3u8url = needScript.split('var hlsUrl = ')[1].split(';')[0]
 # m3u8url = m3u8url[1:][:-1]
 
-htmlfile = requests.get(url)
+scraper = cloudscraper.create_scraper()
+htmlfile = scraper.get(url)
 
 # 下载封面
 downloadCover(htmlfile,folderPath)
