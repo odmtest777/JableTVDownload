@@ -54,20 +54,24 @@ m3u8ApiUrl = "https://webapi.miguvideo.com/gateway/playurl/v3/play/playurl?contI
 downloadurl = 'https://mgbs.vod.miguvideo.com/depository_yqv/asset{}media'
 videoCode = sys.argv[1]
 
+res = requests.get(m3u8ApiUrl + videoCode, headers=headers)
+name = res.json()['body']['content']['contName']
+num  = re.findall("第(.+?)\集", name)[0]
+folderName = '大时代' + num
+
 # In[3]:
 
 
 # 建立資料夾
-if not os.path.exists(videoCode):
-    os.makedirs(videoCode)
-folderPath = os.path.join(os.getcwd(), videoCode)
+if not os.path.exists(folderName):
+    os.makedirs(folderName)
+folderPath = os.path.join(os.getcwd(), folderName)
 
 
 # In[4]:
 
 
 # 得到 m3u8 網址
-res = requests.get(m3u8ApiUrl + videoCode, headers=headers)
 puData_url = res.json()['body']['urlInfo']['url']
 ddCalcu = get_ddCalcu(puData_url)
 m3u8url = f"{puData_url}&ddCalcu={ddCalcu}"
