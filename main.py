@@ -18,12 +18,11 @@ from merge import mergeMp4
 from delete import deleteM3u8, deleteMp4
 from cover import downloadCover
 import cloudscraper
+import sys
 
 # In[2]:
-
-
 # Jable網址
-url = input('輸入jable網址:')
+url = 'https://jable.tv/videos/' + sys.argv[1] + "/"
 
 # In[3]:
 
