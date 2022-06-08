@@ -1,6 +1,6 @@
 import os
 import time
-def mergeMp4(folderPath, tsList):
+def mergeMp4(folderPath, tsList,title):
 	# 開始時間
     start_time = time.time()
     print('開始合成影片..')
@@ -9,7 +9,7 @@ def mergeMp4(folderPath, tsList):
         fileName = tsList[i].split('?')[0]
         file = fileName.split('/')[-1][0:-3] + '.mp4'
         full_path = os.path.join(folderPath, file)
-        video_name = folderPath.split(os.path.sep)[-1]
+        video_name = title
         if os.path.exists(full_path):
             with open(full_path, 'rb') as f1:
                 with open(os.path.join(folderPath, video_name + '.mp4'), 'ab') as f2:
