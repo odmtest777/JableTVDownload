@@ -6,8 +6,7 @@ def mergeMp4(folderPath, tsList,title):
     print('開始合成影片..')
 
     for i in range(len(tsList)):
-        fileName = tsList[i].split('?')[0]
-        file = fileName.split('/')[-1][0:-3] + '.mp4'
+        file = tsList[i].split('/')[-1][0:-3] + '.mp4'
         full_path = os.path.join(folderPath, file)
         video_name = title
         if os.path.exists(full_path):

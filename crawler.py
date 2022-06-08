@@ -9,7 +9,7 @@ import copy
 
 def scrape(ci, folderPath, downloadList, urls):
     os.path.split(urls)
-    fileName = urls.split('?')[0].split('/')[-1][0:-3]
+    fileName = urls.split('/')[-1][0:-3]
     saveName = os.path.join(folderPath, fileName + ".mp4")
     if os.path.exists(saveName):
         # 跳過已下載
