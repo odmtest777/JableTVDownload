@@ -7,6 +7,7 @@ import os
 import re
 import m3u8
 import sys
+from Crypto.Cipher import AES
 from config import headers
 from crawler import prepareCrawl
 from merge import mergeMp4
@@ -44,6 +45,28 @@ respone = requests.get(m3u8url, headers=headers)
 
 # 得到 m3u8 file裡的 URI和 IV
 m3u8obj = m3u8.loads(respone.text)
+m3u8uri = ''
+m3u8iv = ''
+
+for key in m3u8obj.keys:
+    if key:
+        m3u8uri = key.uri
+        m3u8iv = key.iv
+
+
+# 有加密
+if m3u8uri:
+    m3u8keyurl = downloadurl + '/' + m3u8uri  # 得到 key 的網址
+
+    # 得到 key的內容
+    response = requests.get(m3u8keyurl, headers=headers, timeout=10)
+    contentKey = response.content
+
+    vt = m3u8iv.replace("0x", "")[:16].encode()  # IV取前16位
+
+    ci = AES.new(contentKey, AES.MODE_CBC, vt)  # 建構解碼器
+else:
+    ci = ''
 
 # 儲存 ts網址 in tsList
 tsList = []
@@ -52,7 +75,7 @@ for seg in m3u8obj.segments:
     tsList.append(tsUrl)
 
 # 開始爬蟲並下載mp4片段至資料夾
-prepareCrawl('', folderPath, tsList)
+prepareCrawl(ci, folderPath, tsList)
 
 # 合成mp4
 mergeMp4(folderPath, tsList,title)
